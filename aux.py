@@ -3,6 +3,7 @@ import vrplib
 import math
 import random
 import time
+import copy
 
 folders = ['Vrp-Set-' + c for c in ['A', 'B', 'F']]
 files = []
@@ -49,7 +50,8 @@ class CVRPInstance:
         
         return f'Name: {self.name}\nNumber of trucks: {self.number_trucks}\nNumber of nodes: {self.number_nodes}\nMax_capacity: {self.max_capacity}\nDepot_idx: {self.depot_idx}\nOptimal value: {self.optimal_value}'
 
-    
+
+            
 if False:
     print(teste['name'])
     N = teste['dimension']
@@ -101,7 +103,7 @@ def initial_solution_generator(instance : CVRPInstance):
         
     return routes
 
-def get_load_from_route(instance: CVRPInstance,route):
+def get_load_from_route(route):
     total = 0
     for node_idx in route:
         total += instance.demands[node_idx]
@@ -125,45 +127,18 @@ def check_all_problems():
 ##init_sol = initial_solution_generator(instance)
 ##print(init_sol)
 
-def evaluation_function(solution, depot_idx, distance_matrix):
+def evaluation_function(solution: list[list[int]]):
    
     total_cost = 0
     for route in solution:
         for i in range(len(route) - 1):
-            total_cost += distance_matrix[route[i]][route[i+1]]
-        total_cost += distance_matrix[depot_idx][route[0]]
-        total_cost += distance_matrix[depot_idx][route[-1]]
+            total_cost += instance.distance_matrix[route[i]][route[i+1]]
+        total_cost += instance.distance_matrix[instance.depot_idx][route[0]]
+        total_cost += instance.distance_matrix[instance.depot_idx][route[-1]]
         
     return total_cost
 
 
-############ fazer um método de destruir e outro de reparar pra testar
-class ALNS:
-    
-    def __init__(self, feasible_solution: list[list[int]], evaluation_foo):
-        
-        self.evaluation_function = evaluation_foo
-        self.p_iminus = []
-        self.p_plus = []
-        self.destroy_methods = []
-        self.repair_methods = []
-        self.best_solution = feasible_solution
-        self.best_cost = self.evaluation_function(self.best_solution) 
-        
-    def run(self, seconds_limit: int):
-    
-        x_solution = [x for x in self.best_solution]
-        x_cost = self.evaluation_function(x_solution)
-        
-        start_time = time.time()
-        while True:
-            
-            current_time = time.time()
-            if(current_time - start_time) >= 300:
-                break
-            
-                
-            
 def random_removal(solution: list[list[int]], q: int):
     
     ## criando cópia
@@ -180,20 +155,131 @@ def random_removal(solution: list[list[int]], q: int):
 
     return solution, D
 
-def greedy_repair(parcial_solution, D):
+
+def valid_insertion(client_idx, route):
     
+    if get_load_from_route(route) + instance.demands[client_idx] > instance.max_capacity:
+        return False
+    return True
+
+
+def isertion_cost(route, client_idx, insertion_idx):
+
+    succ = instance.depot_idx if insertion_idx == len(route) else route[insertion_idx]
+    pred = instance.depot_idx if insertion_idx == 0 else route[insertion_idx - 1]
+    return instance.distance_matrix[pred][client_idx] + instance.distance_matrix[client_idx][succ] - instance.distance_matrix[pred][succ]
+    
+
+def best_insertion(client_idx, parcial_solution):
+    
+    best_cost, best_route_idx, best_idx = None, None, None
+    
+    for route_idx, route in enumerate(parcial_solution):
+                
+        if not valid_insertion(client_idx, route):
+            continue
+
+        for i in range(0, len(route) + 1):
+            
+            cost = isertion_cost(route, client_idx, i)
+            if best_cost is None or cost < best_cost:
+                best_cost, best_route_idx, best_idx = cost, route_idx, i 
+                
         
-    return
+    return best_route_idx, best_idx 
     
+def greedy_repair(parcial_solution:list[list[int]], D: list[int]):
+    
+    while len(D) != 0:
+        client = D.pop(0)
+        route_idx, insertion_idx = best_insertion(client, parcial_solution) 
+        if route_idx is None or insertion_idx is None:
+            return None
+        else:
+            parcial_solution[route_idx].insert(insertion_idx, client)
+        
+    return parcial_solution
+
+
+def verify_solution(solution: list[list[int]]):
+
+    for route in solution:
+        if get_load_from_route(route) > instance.max_capacity:
+            return False
+    
+    client_counter = {c : 0 for c in instance.clients}
+    for route in solution:
+        for c in route:
+            client_counter[c] +=1
+        
+    for c in instance.clients:
+        if client_counter[c] !=1 :
+            return False
+    
+    return True
+
+def generate_new_solution(solution: list[list[int]]):
+   
+    candidate_solution = None
+   
+    while True:    
+        parcial, unassigned = random_removal(copy.deepcopy(solution), int(instance.number_nodes*0.15))
+        candidate_solution = greedy_repair(parcial, unassigned)
+        if candidate_solution is None:
+            continue 
+        break
+    return  candidate_solution
+
+############ fazer um método de destruir e outro de reparar pra testar
+class ALNS:
+    
+    def __init__(self, feasible_solution: list[list[int]], evaluation_foo):
+        
+        self.evaluation_function = evaluation_foo
+        self.p_iminus = []
+        self.p_plus = []
+        self.destroy_methods = []
+        self.repair_methods = []
+        self.initial_solution = copy.deepcopy(feasible_solution)
+        self.best_solution = copy.deepcopy(feasible_solution)
+        self.best_cost = self.evaluation_function(self.best_solution) 
+        
+    def run(self, seconds_limit: int = 300, alpha: int = 0.999, intial_temp: int = 100):
+    
+        x_solution = [x for x in self.best_solution]
+        x_cost = self.evaluation_function(x_solution)
+        
+        start_time = time.time()
+        while True:
+            
+            current_time = time.time()
+            if(current_time - start_time) >= 300:
+                break
+            
+            
+            
+                
+        
+
 
 if __name__ == '__main__':
 
-    teste_path = '/mnt/c/Users/mathe/OneDrive/Área de Trabalho/T2-Otimizacao-Metaheuristicas-CVRP-com-ALNS/Vrp-Set-A/A/A-n32-k5.vrp'
+    teste_path = '/home/matheusmartin/Área de Trabalho/T2-Otimizacao-Metaheuristicas-CVRP-com-ALNS/Vrp-Set-A/A/A-n32-k5.vrp'
    
     instance = CVRPInstance(path=teste_path)
     init_sol = initial_solution_generator(instance)
-    print(init_sol)
-    random_removal(init_sol, 3)
+    while True:
+        
+        parcial, unassigned = random_removal(copy.deepcopy(init_sol), int(instance.number_nodes*0.2))
+        candidate_solution = greedy_repair(parcial, unassigned)
+        
+        if candidate_solution is None:
+            continue
+                        
+        print(evaluation_function(init_sol), evaluation_function(candidate_solution))
+        
+        break
+
     
     
     
