@@ -6,11 +6,13 @@ import time
 
 folders = ['Vrp-Set-' + c for c in ['A', 'B', 'F']]
 files = []
+instance = None
+
 
 for folder in folders:
     innter_folder_path = os.path.join(folder, folder[-1])
     files_path = sorted(list({os.path.join(innter_folder_path, s[:-4]) for s in os.listdir(innter_folder_path)}))
-    files_ = ( folder, [(fp+".vrp", fp+".sol") for fp in files_path])
+    files_ = ( folder, [(fp + '.vrp', fp + '.sol') for fp in files_path])
     files.append(files_)
 
 class CVRPInstance:
@@ -41,16 +43,13 @@ class CVRPInstance:
         self.depot_idx = int(instance['depot'][0])
         self.distance_matrix = instance['edge_weight']
         self.optimal_value = int(instance['comment'].split(',')[-1].split(':')[-1][1:-1])
+        self.clients = [i for i in range(self.number_nodes) if i != self.depot_idx]
         
     def __str__(self) -> str:
         
         return f'Name: {self.name}\nNumber of trucks: {self.number_trucks}\nNumber of nodes: {self.number_nodes}\nMax_capacity: {self.max_capacity}\nDepot_idx: {self.depot_idx}\nOptimal value: {self.optimal_value}'
 
     
-
-teste_path = '/home/matheusmartin/Área de Trabalho/trab/T2-Otimizacao-Metaheuristicas-CVRP-com-ALNS/Vrp-Set-A/A/A-n32-k5.vrp'
-teste = vrplib.read_instance('/home/matheusmartin/Área de Trabalho/trab/T2-Otimizacao-Metaheuristicas-CVRP-com-ALNS/Vrp-Set-A/A/A-n32-k5.vrp')
-
 if False:
     print(teste['name'])
     N = teste['dimension']
@@ -165,13 +164,36 @@ class ALNS:
             
                 
             
+def random_removal(solution: list[list[int]], q: int):
+    
+    ## criando cópia
+    clients = [x for x in instance.clients]
+    D = []
+    q_ = q
+    
+    while q_:
+        r_idx = random.randint(0, instance.number_trucks - 1)
+        if len(solution[r_idx]) == 0: continue ## rota está vazia, tentar pegar outra
+        c_idx = random.randint(0, len(solution[r_idx]) - 1)
+        D.append(solution[r_idx].pop(c_idx))
+        q_ -=1
+
+    return solution, D
+
+def greedy_repair(parcial_solution, D):
+    
         
+    return
     
 
 if __name__ == '__main__':
-    
+
+    teste_path = '/mnt/c/Users/mathe/OneDrive/Área de Trabalho/T2-Otimizacao-Metaheuristicas-CVRP-com-ALNS/Vrp-Set-A/A/A-n32-k5.vrp'
+   
     instance = CVRPInstance(path=teste_path)
     init_sol = initial_solution_generator(instance)
+    print(init_sol)
+    random_removal(init_sol, 3)
     
     
     
