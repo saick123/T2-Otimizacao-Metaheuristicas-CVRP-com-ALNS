@@ -5,11 +5,12 @@ import random
 import time
 import copy
 import numpy as np
+import sys
+import pickle
 
 folders = ['Vrp-Set-' + c for c in ['A', 'B', 'F']]
 files = []
 instance = None
-
 
 for folder in folders:
     innter_folder_path = os.path.join(folder, folder[-1])
@@ -51,25 +52,6 @@ class CVRPInstance:
         
         return f'Name: {self.name}\nNumber of trucks: {self.number_trucks}\nNumber of nodes: {self.number_nodes}\nMax_capacity: {self.max_capacity}\nDepot_idx: {self.depot_idx}\nOptimal value: {self.optimal_value}'
 
-
-            
-if False:
-    print(teste['name'])
-    N = teste['dimension']
-    coords = teste['node_coord']
-    m = [[0]*N]*N
-
-    dist = teste['edge_weight']
-    print(coords)
-
-    row = []
-    for j in range(len(m)):
-        dx = (coords[0][0] - coords[j][0])
-        dy = (coords[0][1] - coords[j][1])
-        d = math.sqrt(dx*dx + dy*dy)
-        row.append(d)
-    print(dist[0])
-    print(row)
 
 
 def get_distance(node1 : int , node2 : int):
@@ -142,6 +124,31 @@ def evaluation_function(solution: list[list[int]]):
         
     return math.ceil(total_cost)
 
+
+def special_evaluation_function(solution: list[list[int]]) -> int:
+    
+    dist = instance.distance_matrix
+    demands = instance.demands
+    max_capacity = instance.max_capacity
+    total_cost = 0
+    
+    alpha = 1.5
+    
+    for route in solution:
+        if len(route) == 0: continue
+        
+        total_demand = 0
+        for i in range(len(route) - 1):
+            total_cost += dist[route[i]][route[i+1]]
+            total_demand += demands[route[i]]
+            
+        total_cost += dist[instance.depot_idx][route[0]]
+        total_cost += dist[instance.depot_idx][route[-1]]
+        penalization = alpha * max(0, (total_demand - max_capacity)*(total_demand - max_capacity))
+        total_cost += penalization
+    
+    return math.ceil(total_cost)
+    
 
 def random_removal(solution: list[list[int]], q: int):
     
@@ -308,6 +315,35 @@ def greedy_repair(parcial_solution:list[list[int]], D: list[int]):
     return parcial_solution
 
 
+### greedy sem corte cedo
+
+def best_insertion_2_sem_corte(client_idx, parcial_solution):
+    
+    best_cost, best_route_idx, best_idx = None, None, None
+    
+    for route_idx, route in enumerate(parcial_solution):
+    
+        for i in range(0, len(route) + 1):
+            cost = isertion_cost(route, client_idx, i)
+            if best_cost is None or cost < best_cost:
+                best_cost, best_route_idx, best_idx = cost, route_idx, i 
+                
+        
+    return best_route_idx, best_idx 
+
+
+def greedy_repair_2_sem_corte(parcial_solution:list[list[int]], D: list[int]):
+    
+    while len(D) != 0:
+        client = D.pop(0)
+        route_idx, insertion_idx = best_insertion_2_sem_corte(client, parcial_solution) 
+        
+        parcial_solution[route_idx].insert(insertion_idx, client)
+        
+    return parcial_solution
+
+
+
 def random_repair(parcial_solution: list[list[int]], D: list[int]):
     
     
@@ -325,7 +361,23 @@ def random_repair(parcial_solution: list[list[int]], D: list[int]):
         parcial_solution[r_idx].insert(insertion_idx, client)
     
     return parcial_solution
+
+
+def random_repair_2_sem_corte(parcial_solution: list[list[int]], D: list[int]):
+    
+    
+    routes_idx = range(len(parcial_solution))
+    while (len(D) != 0):
+    
+        c_idx = random.choice(range(len(D)))
+        client = D.pop(c_idx)
         
+        r_idx = random.choice(routes_idx)
+        insertion_idx = random.randint(0, len(parcial_solution[r_idx]))
+        parcial_solution[r_idx].insert(insertion_idx, client)
+    
+    return parcial_solution
+
             
 def verify_solution(solution: list[list[int]]):
 
@@ -364,8 +416,9 @@ def real_best_insertion(client_idx, parcial_solution, routes_idx):
     
         route = parcial_solution[r_idx]
                 
-        #if not valid_insertion(client_idx, route):
-            #continue
+        if not valid_insertion(client_idx, route):
+            continue
+        
         for i in range(0, len(route) + 1):
             cost = isertion_cost(route, client_idx, i)
             if best_cost is None or cost < best_cost:
@@ -377,42 +430,57 @@ def real_best_insertion(client_idx, parcial_solution, routes_idx):
 def real_greedy_repair(parcial_solution : list[list[int]], D: list[int]):
     
     
-    best_positions = [(np.inf, -1, -1) for _ in D]
+    best_positions_2 = {client : [np.inf, -1, -1, -1] for client in D}
     routes_idx = list(range(len(parcial_solution)))
     #index_list = list(range(len(parcial_solution))) ## auxiliar pra função de max
-    N = len(D)
     
-    for _ in range(N):
+    flag = False
+    while len(D):
         
-        for idx, c in enumerate(D):
-            best_cost, route_idx, insertion_idx = real_best_insertion(c, parcial_solution, routes_idx)
-            if best_cost < best_positions[idx][0]:
-                best_positions[idx] = (best_cost, route_idx, insertion_idx)
-            #best_positions.append((best_cost, route_idx, insertion_idx))
-    
-        best_idx = min(range(len(best_positions)), key=lambda k : best_positions[k][0])
+        for client_idx, client in enumerate(D):
+            best_positions_2[client][-1] = client_idx ### atualizando o indice da iteração
+            best_cost, best_route_idx, best_insertion_idx = real_best_insertion(client, parcial_solution, routes_idx)
+            
+            if best_insertion_idx is None: ## se não tem como inserir
+                if flag and best_positions_2[client][2] == routes_idx[0]:  ## e a melhro rota dele é a mesma que não deu pra inserir agora
+                    return parcial_solution ## então retorna, pois não existe opção de inserção
+                else:
+                    continue ## não precisa atualizar então
+
+            if best_cost < best_positions_2[client][0]:
+                best_positions_2[client] = [best_cost, best_route_idx, best_insertion_idx, client_idx]
+                
+        values = list(best_positions_2.values())
+        best_cost, best_route_idx, best_insertion_idx, best_client_idx = min(values, key= lambda x: x[0])
         
-        best_client = D.pop(best_idx)
-        best_cost, best_route_idx, best_insertion_idx = best_positions.pop(best_idx)
+        best_client = D.pop(best_client_idx)
+        best_positions_2.pop(best_client)
         
         parcial_solution[best_route_idx].insert(best_insertion_idx, best_client)
         routes_idx = [best_route_idx]
+        flag = True ## marca se já passou uma iteração
+        
+    return parcial_solution
+
+## to do
+def real_greedy_repair_2(parcial_solution : list[list[int]], D: list[int]):
+    
+    
+    best_positions = [(np.inf, -1, -1) for _ in D]
+    routes_idx = list(range(len(parcial_solution)))
+    #index_list = list(range(len(parcial_solution))) ## auxiliar pra função de max
+ 
+    while len(D):
+        
+        
+        for client_idx, client in enumerate(D):
+            best_cost, best_route_idx, best_insertion_idx  = real_best_insertion(client, parcial_solution, routes_idx)
+        
+            
         
     return parcial_solution
 
 
-def best_insertion_in_route(client, route):
-    
-    best_cost, best_idx = None, None
-    
-    for i in range(0, len(route) + 1):
-        
-        cost = isertion_cost(route, client, i)
-        if best_cost is None or cost < best_cost:
-            best_cost, best_idx = cost, i 
-            
-    return best_idx
-    
 
 def secure_greedy_repair(parcial_solution: list[list[int]], D: list[int]):
     
@@ -439,12 +507,6 @@ def secure_greedy_repair(parcial_solution: list[list[int]], D: list[int]):
         
         route_idx = random.choice(possible_insertion_routes)
         lazy_insertion_clients[route_idx].append(client)
-        
-        #insertion_idx = best_insertion_in_route(client, parcial_solution[route_idx])
-        #parcial_solution[route_idx].insert(insertion_idx, client)
-        
-    
-    #print(lazy_insertion_clients)
     
     for lazy_idx, lazy_clients in enumerate(lazy_insertion_clients):
         if len(lazy_clients) == 0: continue
@@ -467,6 +529,85 @@ def secure_greedy_repair(parcial_solution: list[list[int]], D: list[int]):
     return parcial_solution
 
 
+def compute_all_insertions(client, parcial_solution, routes_idx):
+    
+    insertion_positions = []
+    
+    for route_idx in routes_idx:
+        
+        if not valid_insertion(client, parcial_solution[route_idx]):
+            continue
+        
+        for insertion_idx in range(len(parcial_solution[route_idx]) + 1):
+            cost = isertion_cost(parcial_solution[route_idx], client, insertion_idx)
+            insertion_positions.append((cost, route_idx, insertion_idx))
+
+    return insertion_positions
+    
+
+def regret_k(partial_solution: list[list[int]], D: list[int], k = 2):
+    
+    
+    insertion_positions_dict = {c : [] for c in D}
+    
+    routes_idx = list(range(len(partial_solution)))
+    for client_idx, client in enumerate(D):
+        insertion_positions = compute_all_insertions(client, partial_solution, routes_idx)
+        insertion_positions.sort(key= lambda x : x[0]) ## cost, route_idx, insertion_idx
+        insertion_positions_dict[client] = insertion_positions
+    
+    while len(D):
+        
+        regret_values = []
+        
+        for client_idx, client in enumerate(D):
+            insertion_positions = insertion_positions_dict[client]
+            if len(insertion_positions) < k and len(insertion_positions) != 0: ## se o client tem menos de k posições para ser inserido
+                regret_values.append((np.inf, client)) ## ele ganha prioridade máxima
+            elif len(insertion_positions) == 0:
+                return partial_solution ## não há posição para o client
+            else:
+                best_cost = insertion_positions[0][0]
+                regret_value = 0
+                for j in range(1, k):
+                    regret_value += (insertion_positions[j][0] - best_cost)
+                regret_values.append((regret_value, client))
+        
+        regret_values.sort(key= lambda x: x[0], reverse=True)
+        
+        _, best_client = regret_values[0]
+        insertion_positions = insertion_positions_dict[best_client]
+        _, best_route_idx, best_insertion_idx = insertion_positions[0]
+        
+        partial_solution[best_route_idx].insert(best_insertion_idx, best_client)
+        D.remove(best_client)
+        insertion_positions_dict.pop(best_client)
+        
+        for client_idx, client in enumerate(D):
+            insertion_positions = insertion_positions_dict[client]
+            to_update_flag = False
+            for _, route_idx, _ in insertion_positions:
+                if route_idx == best_route_idx:
+                    to_update_flag = True
+                    break
+            
+            if to_update_flag:
+                new_insertion_positions_on_best_route = compute_all_insertions(client, partial_solution, [best_route_idx])
+                insertion_positions = [x for x in insertion_positions if x[1] != best_route_idx]
+                insertion_positions = insertion_positions + new_insertion_positions_on_best_route
+                insertion_positions.sort(key= lambda x : x[0])             
+                insertion_positions_dict[client] = insertion_positions
+    
+    return partial_solution
+
+def regret_2(partial_solution: list[list[int]], D: list[int]):
+    return regret_k(partial_solution, D, k=2)
+
+def regret_3(partial_solution: list[list[int]], D: list[int]):
+    return regret_k(partial_solution, D, k=3)
+
+
+
 ############ fazer um método de destruir e outro de reparar pra testar
 class ALNS:
     
@@ -483,8 +624,10 @@ class ALNS:
             
         self.evaluation_function = evaluation_foo
         self.initial_solution = copy.deepcopy(feasible_solution)
+        
         self.best_solution = copy.deepcopy(feasible_solution)
         self.best_cost = self.evaluation_function(self.best_solution) 
+        self.time_to_best = None
         
         self.sigma_values = sigma_values
         self.r = r
@@ -492,6 +635,9 @@ class ALNS:
         
         self.destroy_methods = destroy_methods
         self.repair_methods = repair_methods
+        self.costs_per_iter = []
+
+        
         self.__init_destroy_repair_methods_metadata()
     
     ################## 
@@ -509,15 +655,19 @@ class ALNS:
     
     def __update_methods_weights(self) -> None:
         
+        min_weight = 1e-12
+        
         for i in range(len(self.destroy_methods)):
             if self.destroy_n_times_used[i] > 0:
                 self.destroy_weights[i] = self.destroy_weights[i]*(1 - self.r) + self.r * (self.destroy_scores[i] / self.destroy_n_times_used[i])
+                self.destroy_weights[i] = max(min_weight, self.destroy_weights[i])
             self.destroy_n_times_used[i] = 0
             self.destroy_scores[i] = 0
 
         for i in range(len(self.repair_methods)):
             if self.repair_n_times_used[i] > 0:
                 self.repair_weights[i] = self.repair_weights[i]*(1 - self.r) + self.r * (self.repair_scores[i] / self.repair_n_times_used[i])
+                self.repair_weights[i] = max(min_weight, self.repair_weights[i])
             self.repair_n_times_used[i] = 0
             self.repair_scores[i] = 0
             
@@ -578,7 +728,7 @@ class ALNS:
             code = verify_solution(candidate_solution)
             if code == 0:
                 break
-            
+            #break
             if tries >= 1000000:
                 raise('Numero de tentativas de construir solução ultrapassou 1.000.000')
         
@@ -593,7 +743,7 @@ class ALNS:
         current_iter = 1 ##### começa na iteração número 1 devido ao cáculo da temperatura (T_0/log(1 + iter))
         current_temp = initial_temp
         min_temp = 1e-6
-        costs = []
+        #costs = []
         segment_size = 100 ## número de iterações necessárias para permitir atualizar os pesos dos métodos
         sigma_flags = [False, False, False]
         #lambda_ = (math.log( initial_temp / min_temp ) / seconds_limit)
@@ -619,11 +769,11 @@ class ALNS:
             #flag_new_best = False ### usado para não fazer cópias desnecessárias
             if xt_cost < self.best_cost: ### ATUALIZANDO O MELHOR GLOBAL
                 
+                self.time_to_best = time.time() - start_time ## atualiza o tempo que achou o melhor 
                 sigma_flags[0] = True ## se a nova solução é a melhor global
                 #flag_new_best = True
                 #x_solution, x_cost = copy.deepcopy(xt_solution), xt_cost
                 self.best_solution, self.best_cost = copy.deepcopy(xt_solution), xt_cost
-                costs.append(self.best_cost)
            
             if xt_cost < x_cost: 
                 sigma_flags[1] = True ## se a nova solução é melhor que a atual
@@ -655,22 +805,30 @@ class ALNS:
                     
             
             current_iter +=1
-            
+            self.costs_per_iter.append(x_cost)
 
-
+    def get_results(self) -> dict:
+        
+        results = dict()
+        results['eval_per_iter'] = self.costs_per_iter
+        results['best_solution'] = self.best_solution
+        results['best_cost'] = self.best_cost
+        
+        return results
+        
 def run_all():
     
     global instance, files
 
     for case_name, filepaths in files:
-        if case_name != 'Vrp-Set-F' : continue
+        #if case_name != 'Vrp-Set-F' : continue
         print(f'CASE NAME : {case_name}')
         for vrp_path, sol_path in filepaths:
             instance = CVRPInstance(path=vrp_path)
             init_sol = initial_solution_generator(instance)
             
             destroy_methods = [random_removal, worst_removal_consertado, shaw_removal]
-            repair_methods = [greedy_repair, random_repair]
+            repair_methods = [greedy_repair, regret_2, regret_3]
             q_min = int(0.05*len(instance.clients))
             q_max = int(0.30*len(instance.clients))
             q_interval = (q_min, q_max)
@@ -683,7 +841,7 @@ def run_all():
             #init_temp = evaluation_function(init_sol) * (-0.05/math.log(0.5))
             #print(init_temp)
             #exit()
-            alns.run(seconds_limit=300, initial_temp=1000, verbose=True)
+            alns.run(seconds_limit=30, initial_temp=1000, verbose=False)
         
             #alns = ALNS(init_solution, evaluation_function)
             #alns.run(initial_temp=10000, max_iteration=10000, verbose=False)
@@ -695,10 +853,82 @@ def run_all():
                 print()
 
 
+def parse_args() -> dict:    
+    args = {arg.split("=")[0]: arg.split("=")[1] for arg in sys.argv[1:]}
+    return args
+
+def get_args() -> dict:
+    
+    args_dict = parse_args()
+    
+    args_dict['q_max'] = float(args_dict['q_max'])
+    args_dict['r'] = float(args_dict['r'])    
+    #args_dict['init_temp'] = int(args_dict['init_temp'])
+    args_dict['save_path'] = str(args_dict['save_path'])
+    args_dict['number_iterations'] = int(args_dict['number_iterations'])
+    args_dict['targets'] = list(args_dict['targets'].split(','))
+    
+    return args_dict
+
+def main():
+    
+    global instance, files
+    
+    args = get_args()    
+    
+    for vrp_path in args['targets']:
+        
+        instance = CVRPInstance(path=vrp_path)
+        #init_sol = initial_solution_generator(instance)
+        
+        destroy_methods = [random_removal, worst_removal_consertado, shaw_removal]
+        repair_methods = [greedy_repair, regret_2, regret_3]
+        
+        ## resgatando os hiperparâmetros
+        q_max = args['q_max']
+        r = args['r']
+        #init_temp = args['init_temp']
+        
+        q_min = 0.05
+        instance_size = len(instance.clients)
+        
+        q_interval_min = int(q_min * instance_size)
+        q_interval_max = int(q_max * instance_size)
+        q_interval = (q_interval_min, q_interval_max)
+        
+        times_to_best = []
+        best_costs = []
+        for _ in range(args['number_iterations']):
+             
+            init_sol = initial_solution_generator(instance)
+        
+            alns = ALNS(feasible_solution=init_sol, evaluation_foo=evaluation_function,
+                    destroy_methods= destroy_methods, repair_methods= repair_methods,
+                    r=r, sigma_values=[3,2,1],
+                    q_interval=q_interval)
+        
+            alns.run(seconds_limit=10, initial_temp=1000, verbose=False)
+            best_costs.append(alns.best_cost)
+            times_to_best.append(alns.time_to_best)
+        
+        f_sol_optimal = instance.optimal_value
+        f_mh_min = min(best_costs)
+        f_mh_mean = sum(best_costs) / len(best_costs)
+        instance_name = instance.name
+        path = os.path.join(args['save_path'], f'{instance_name}.txt')
+        
+        with open(path, 'w') as out_file:
+            #pickle.dump(save_dict, out_file)
+            print(f'{instance_name}, {q_max}, {r}, {f_mh_min}', file=out_file)    
+    
+    return 
+
 if __name__ == '__main__':
 
 
-    run_all()
+    main()
+
+    #run_all()
 
     if False:
         
@@ -711,7 +941,7 @@ if __name__ == '__main__':
         parcial, D = shaw_removal(init_sol, q_min)
         print('Parcial', parcial)
         print('D', D)
-        new_sol = secure_greedy_repair(parcial, D)
+        new_sol = regret_k(parcial, D)
         
         print(verify_solution(new_sol), evaluation_function(new_sol), new_sol)
         print(instance.optimal_value, init_sol)
