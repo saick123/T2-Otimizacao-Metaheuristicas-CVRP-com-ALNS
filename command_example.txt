@@ -1,0 +1,5 @@
+"python3", program_name, f"q_max={q_max}", f'r={r}'
+                            , f'save_path={save_path}', f'targets={targets_str}', f'number_iterations={number_iterations}'
+
+
+python3 aux.py q_max=0.15 r=0.1 save_path=args_results targets='/mnt/c/Users/mathe/OneDrive/Área de Trabalho/teste/T2-Otimizacao-Metaheuristicas-CVRP-com-ALNS/Vrp-Set-A/A/A-n32-k5.vrp' number_iterations=1

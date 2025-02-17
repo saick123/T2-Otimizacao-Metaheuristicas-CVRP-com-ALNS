@@ -19,7 +19,7 @@ for folder in folders:
     files.append(files_)
 
 
-def search_hyper_paramenters(programs_number = 1, number_iterations=1):
+def search_hyper_paramenters(program_name, save_path, programs_number = 1, number_iterations=1):
     
     q_maxes = [0.15, 0.20, 0.30]
     r_values = [0.1, 0.3, 0.5]
@@ -46,11 +46,9 @@ def search_hyper_paramenters(programs_number = 1, number_iterations=1):
                     print(f'processo {i} finalizado ...')
                 processes = [] ## reseta lista de processos
             
-            file_name = f'q_max-r-{q_max}-{r}.pkl'
-            save_path = 'args_results'
             
             ## q_max, r, save_path, targets, number_iterations
-            command_line = ["python3", "test_command.py", f"q_max={q_max}", f'r={r}'
+            command_line = ["python3", program_name, f"q_max={q_max}", f'r={r}'
                             , f'save_path={save_path}', f'targets={targets_str}', f'number_iterations={number_iterations}']
             
             processo = subprocess.Popen(command_line, stdout=subprocess.PIPE, text=True)
@@ -69,4 +67,4 @@ def search_hyper_paramenters(programs_number = 1, number_iterations=1):
 if __name__ == '__main__':
     
     
-    search_hyper_paramenters(programs_number=5, number_iterations=1)
+    search_hyper_paramenters('aux.py', 'args_results', programs_number=3, number_iterations=1)

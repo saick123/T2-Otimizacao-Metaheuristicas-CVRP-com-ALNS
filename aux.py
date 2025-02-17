@@ -870,6 +870,28 @@ def get_args() -> dict:
     
     return args_dict
 
+def save_results(save_path, q_max, r, times_to_best, best_costs):
+    
+    f_sol_optimal = instance.optimal_value
+    f_mh_min = min(best_costs)
+    f_mh_mean = sum(best_costs) / len(best_costs)
+    instance_name = instance.name
+    temp_min = min(times_to_best)
+    temp_mean = sum(times_to_best) / len(times_to_best)
+    gap_min = (f_mh_min - f_sol_optimal) / f_sol_optimal
+    gap_mean = (f_mh_mean - f_sol_optimal) / f_sol_optimal
+    
+    save_path = os.path.join(save_path, f'{instance_name}-q_max-r-{q_max}-{r}.txt')
+    
+    #print(times_to_best)
+    #print(best_costs)
+    #print(instance_name, q_max, r, f_sol_optimal, f_mh_min, f_mh_mean, temp_min, temp_mean, gap_min, gap_mean)
+    
+    with open(save_path, 'w') as out_file:
+        ## instance, param1(q_max), param2(r), f_sol_optimal, f_mh_min, f_mh_mean, temp_min, temp_mean, gap_min, gap_mean
+        print(f'{instance_name}, {q_max}, {r}, {f_sol_optimal}, {f_mh_min}, {f_mh_mean}, {temp_min}, {temp_mean}, {gap_min}, {gap_mean}', file=out_file)
+
+
 def main():
     
     global instance, files
@@ -904,22 +926,17 @@ def main():
         
             alns = ALNS(feasible_solution=init_sol, evaluation_foo=evaluation_function,
                     destroy_methods= destroy_methods, repair_methods= repair_methods,
-                    r=r, sigma_values=[3,2,1],
+                    r=r, sigma_values=[1, 0.4, 0.25],
                     q_interval=q_interval)
         
-            alns.run(seconds_limit=10, initial_temp=1000, verbose=False)
+            alns.run(seconds_limit=300, initial_temp=1000, verbose=False)
             best_costs.append(alns.best_cost)
             times_to_best.append(alns.time_to_best)
+            
+            #print(alns.time_to_best)
+            #print(alns.best_cost)
         
-        f_sol_optimal = instance.optimal_value
-        f_mh_min = min(best_costs)
-        f_mh_mean = sum(best_costs) / len(best_costs)
-        instance_name = instance.name
-        path = os.path.join(args['save_path'], f'{instance_name}.txt')
-        
-        with open(path, 'w') as out_file:
-            #pickle.dump(save_dict, out_file)
-            print(f'{instance_name}, {q_max}, {r}, {f_mh_min}', file=out_file)    
+        save_results(args['save_path'], q_max, r, times_to_best, best_costs) 
     
     return 
 
