@@ -11,6 +11,7 @@ if __name__ == "__main__":
     folder_path = 'args_results'
     save_name = 'hp_selection.csv'
     header = 'instance; param1; param2; f_sol_optimal; f_mh_min; f_mh_mean; temp_min; temp_mean; gap_min; gap_mean'
+    
     files = os.listdir(folder_path)
     
     lines = []
