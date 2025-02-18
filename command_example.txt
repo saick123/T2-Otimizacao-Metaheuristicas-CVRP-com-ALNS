@@ -2,4 +2,4 @@
                             , f'save_path={save_path}', f'targets={targets_str}', f'number_iterations={number_iterations}'
 
 
-python3 aux.py q_max=0.15 r=0.1 save_path=args_results targets='/mnt/c/Users/mathe/OneDrive/Área de Trabalho/teste/T2-Otimizacao-Metaheuristicas-CVRP-com-ALNS/Vrp-Set-A/A/A-n32-k5.vrp' number_iterations=1
+python3 app_consertado.py q_max=0.15 r=0.3 save_path=resultado_figura targets='/mnt/c/Users/mathe/OneDrive/Área de Trabalho/pasta final/T2-Otimizacao-Metaheuristicas-CVRP-com-ALNS/Vrp-Set-A/A/A-n32-k5.vrp' number_iterations=1

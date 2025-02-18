@@ -6,7 +6,7 @@ import time
 import copy
 import numpy as np
 import sys
-import pickle
+import matplotlib.pyplot as plt
 
 folders = ['Vrp-Set-' + c for c in ['A', 'B', 'F']]
 files = []
@@ -706,9 +706,6 @@ class ALNS:
         
         return 
     
-    def __get_next_temp(self, initial_temp, lambda_, time_elapsed):
-        return initial_temp * math.exp(-(lambda_*time_elapsed))
-    
     def __generate_new_solution(self, solution, destroy_method_idx, repair_method_idx):
         
         q = random.randint(self.q_interval[0], self.q_interval[1])
@@ -815,7 +812,9 @@ class ALNS:
         results['best_cost'] = self.best_cost
         
         return results
-        
+
+
+## não to usando maix     
 def run_all():
     
     global instance, files
@@ -851,6 +850,65 @@ def run_all():
                 print(f'FOLDER {case_name}, VRP_PATH = {vrp_path}, Best eval {alns.best_cost}, Well-Know Best cost {instance.optimal_value}, Feasible? {verify_solution(alns.best_solution)}', file=out_file)
                 print(f'Best Solution: {alns.best_solution}', file=out_file)
                 print()
+
+def gen_chart(save_path, image_name, best_cost, costs_per_iter):
+    """Gera o gráfico de valor da função objetiva por iteração
+
+    Args:
+        root (str, optional): pasta da instância. Defaults to "./instances/A".
+        instance (str, optional): nome da instância. Defaults to "A-n32-k5".
+    """
+        
+    iterations = list(range(len(costs_per_iter)))
+    
+        
+        # Find max values
+    max_x = len(costs_per_iter) - 1
+    min_y = min(costs_per_iter)
+    min_y_i = costs_per_iter.index(min_y)
+
+    # Downsample Y-axis labels (show values only at each 1000)
+    
+    if False:
+        plt.figure(figsize=[12,6])
+        plt.title("A-n32-k5 Custo por Iteração - Simulated Annealing")
+        plt.plot(iterations[::1000], costs_per_iter[::1000], linestyle = "dashdot", color='g')
+        plt.axhline(y = best_cost, color = 'r', linestyle = '--') 
+        plt.xlabel("Iterações")
+        plt.ylabel("Custo")
+        plt.tight_layout()
+        plt.grid(True, linestyle="--", alpha=0.6)
+        plt.scatter([min_y_i], [min_y], color="r", zorder=3)
+        plt.text(min_y_i, min_y-50, f"({max_x}, {min_y})", fontsize=8, verticalalignment='bottom', horizontalalignment="center", color="blue")
+        plt.savefig(os.path.join(save_path, image_name + '-1000.svg'))
+        plt.close()
+        
+        
+        plt.figure(figsize=[12,6])
+        plt.title("A-n32-k5 Custo por Iteração - Simulated Annealing")
+        plt.plot(iterations[::10000], costs_per_iter[::10000], linestyle = "dashdot", color='g')
+        plt.axhline(y = best_cost, color = 'r', linestyle = '--') 
+        plt.xlabel("Iterações")
+        plt.ylabel("Custo")
+        plt.tight_layout()
+        plt.grid(True, linestyle="--", alpha=0.6)
+        plt.scatter([min_y_i], [min_y], color="r", zorder=3)
+        plt.text(min_y_i, min_y-50, f"({max_x}, {min_y})", fontsize=8, verticalalignment='bottom', horizontalalignment="center", color="blue")
+        plt.savefig(os.path.join(save_path, image_name + '-10000.svg'))       
+        plt.close()
+    
+    plt.figure(figsize=[12,6])
+    plt.title("A-n32-k5 Custo por Iteração - Simulated Annealing")
+    plt.plot(iterations, costs_per_iter, linestyle = "dashdot", color='g')
+    plt.axhline(y = best_cost, color = 'r', linestyle = '--') 
+    plt.xlabel("Iterações")
+    plt.ylabel("Custo")
+    plt.tight_layout()
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.scatter([min_y_i], [min_y], color="r", zorder=3)
+    plt.text(min_y_i, min_y-50, f"({max_x}, {min_y})", fontsize=8, verticalalignment='bottom', horizontalalignment="center", color="blue")
+    plt.savefig(os.path.join(save_path, image_name + '-all.svg'))
+    plt.close()
 
 
 def parse_args() -> dict:    
@@ -920,7 +978,7 @@ def main():
         
         times_to_best = []
         best_costs = []
-        for _ in range(args['number_iterations']):
+        for w in range(args['number_iterations']):
              
             init_sol = initial_solution_generator(instance)
         
@@ -933,10 +991,12 @@ def main():
             best_costs.append(alns.best_cost)
             times_to_best.append(alns.time_to_best)
             
+            gen_chart(args['save_path'], f'{instance.name}-q_max-r-iter-{q_max}-{r}-{w+1}', alns.best_cost, alns.costs_per_iter)            
             #print(alns.time_to_best)
             #print(alns.best_cost)
         
-        save_results(args['save_path'], q_max, r, times_to_best, best_costs) 
+        save_results(args['save_path'], q_max, r, times_to_best, best_costs)
+
     
     return 
 
