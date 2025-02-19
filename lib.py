@@ -216,12 +216,13 @@ class CVRPInstance:
         
         
         dist_matrix = [[0] * self.number_nodes for _ in range(self.number_nodes)]
-           
+        
+        ## tirei o round
         for i in range(self.number_nodes):
             for j in range(self.number_nodes):
                 dx = self.node_coords[i][0] - self.node_coords[j][0]
                 dy = self.node_coords[i][1] - self.node_coords[j][1]
-                dist_matrix[i][j] = math.sqrt(dx*dx + dy*dy)
+                dist_matrix[i][j] = (math.sqrt(dx*dx + dy*dy))
             
         return dist_matrix
     

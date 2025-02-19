@@ -1,7 +1,7 @@
 
 import sys
 import subprocess
-import time
+import time as time_bib
 import os
 
 def parse_args() -> dict:    
@@ -63,7 +63,7 @@ def search_hyper_paramenters(program_name, save_path, programs_number = 1, numbe
     processes = [] ## reseta lista de processos
                     
 
-def generate_results(program_name, save_path, programs_number = 1, number_iterations=1, q_max = 0.15, r=0.3):
+def generate_results(program_name, save_path = './', programs_number = 1, number_iterations=1, q_max = 0.15, r=0.3, time=300, verbose=0, figure=0):
     
     total_targets = []  
     for _, paths in files:
@@ -91,31 +91,43 @@ def generate_results(program_name, save_path, programs_number = 1, number_iterat
         print('WRONG DIVISION')
         raise('dividou as tarefas errado')
     
+    command_args = [
+        f'q_max={q_max}',
+        f'r={r}',
+        f'save_path={save_path}',
+        f'number_iterations={number_iterations}',
+        f'time={time}',
+        f'verbose={verbose}',
+        f'figure={figure}',
+    ]
     
     processes = []
     for targets in targets_for_program:
         
         targets_str = ",".join(targets)
         
-        command_line = ["python3", program_name, f"q_max={q_max}", f'r={r}'
-                            , f'save_path={save_path}', f'targets={targets_str}', f'number_iterations={number_iterations}']
-        
+        command_args.append(
+            f'targets={targets_str}'
+        )
+        command_line = ["python3", program_name] + command_args
+            
         processo = subprocess.Popen(command_line, stdout=subprocess.PIPE, text=True)
         processes.append(processo)
-        #time.sleep(1)
-        print(f'processo {len(processes) - 1} criado ...')
+
+        print(f'processo {len(processes)} criado ...')
     
-    time.sleep(5)
+    time_bib.sleep(5)
     for i in range(len(processes)):
         processes[i].wait() ## espera todos terminarem
-        print(f'processo {i} finalizado ...')
+        print(f'processo {i+1} finalizado ...')
     
     return 
 
-
-
 if __name__ == '__main__':
-    
+    ## time verbose generate_figure 
     
     #search_hyper_paramenters('aux.py', 'args_results', programs_number=3, number_iterations=1)
-    generate_results('app.py', 'final_results', programs_number=4, number_iterations=5)
+    generate_results('app.py', 'test_results', 
+                     programs_number=5, number_iterations=1,
+                     q_max=0.15, r=0.3, time=300,
+                     verbose=0, figure=0)

@@ -1,0 +1,10 @@
+instance; q_max; r; f_sol_optimal; f_mh_min; f_mh_mean; temp_min; temp_mean; gap_min; gap_mean
+A-n33-k6, 0.15, 0.3, 742, 742, 742.0, 0.6152188777923584, 0.6152188777923584, 0.0, 0.0
+
+Best Solution:
+route 1 ==> [7, 19, 29, 11, 17, 10]
+route 2 ==> [32, 25, 16, 30, 27, 28]
+route 3 ==> [4, 8, 3, 9, 15, 20, 2, 5]
+route 4 ==> [14, 1, 6, 18, 13]
+route 5 ==> [22, 26, 23, 24, 31]
+route 6 ==> [21, 12]

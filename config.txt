@@ -1,0 +1,6 @@
+# os valores devem ser passados na forma "var : tipo = valor"
+r : float = 0.3
+q_max : float = 0.1
+save_path : str = 'ola mundo save path'
+target_path : str = 'ola mundo target path'
+number_iterations : int = 1
