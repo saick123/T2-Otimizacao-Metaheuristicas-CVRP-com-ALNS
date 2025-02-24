@@ -1,8 +1,8 @@
 import os
-import vrplib
+#import vrplib
 import math
 import random
-import time
+#import time
 import copy
 import numpy as np
 import sys
@@ -552,13 +552,17 @@ def read_config() -> dict:
 
 ## salva todos os tipos de resultados requeridos nas tabelas do trabalho em um arquivo
 ## A primeira linha é o header, a segunda as informções e depois temos as rotas da melhor solução gerada
-def save_results(save_path, q_max, r, times_to_best, best_costs, best_solution, optimal_solution=None):
+def save_results(save_path, q_max, r, times_to_best, best_costs, best_solutions, optimal_solution=None):
     
     f_sol_optimal = instance.optimal_value
     if optimal_solution is not None:
         f_sol_optimal = evaluation_function(optimal_solution)
     
     f_mh_min = min(best_costs)
+    
+    best_sol_idx = best_costs.index(f_mh_min)
+    best_solution = best_solutions[best_sol_idx]
+    
     f_mh_mean = sum(best_costs) / len(best_costs)
     instance_name = instance.name
     temp_min = min(times_to_best)
@@ -630,6 +634,7 @@ def main():
         
         times_to_best = []
         best_costs = []
+        best_solutions = []
         
         hyperparameters['q_interval'] = q_interval
         
@@ -645,11 +650,12 @@ def main():
             alns.run(seconds_limit=args['time'], initial_temp=1000, verbose=args['verbose'])
             best_costs.append(alns.best_cost)
             times_to_best.append(alns.time_to_best)
+            best_solutions.append(copy.deepcopy(alns.best_solution))
             
             if args['figure']:
                 create_image(args['save_path'], instance.name, f'{instance.name}-q_max-r-iter-{q_max}-{r}-{w+1}', alns.best_cost, alns.costs_per_iter) ## para cada iteração, salva o gráfico       
             
-        save_results(args['save_path'], q_max, r, times_to_best, best_costs, alns.best_solution, optimal_solution=None) ## salvando resultados finais
+        save_results(args['save_path'], q_max, r, times_to_best, best_costs, best_solutions, optimal_solution=None) ## salvando resultados finais
 
     return 
 

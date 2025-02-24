@@ -8,23 +8,25 @@ def parse_args() -> dict:
     args = {arg.split("=")[0]: arg.split("=")[1] for arg in sys.argv[1:]}
     return args
 
-folders = ['Vrp-Set-' + c for c in ['A', 'B', 'F']]
-files = []
-instance = None
+def get_files(instances_path):
+    prefix_ = os.path.join(instances_path, 'Vrp-Set-')
+    folders = [prefix_ + c for c in ['A', 'B', 'F']]
+    files = []    
+    
+    for folder in folders:
+        innter_folder_path = os.path.join(folder, folder[-1])
+        files_path = sorted(list({os.path.join(innter_folder_path, s[:-4]) for s in os.listdir(innter_folder_path)}))
+        files_ = ( folder, [(fp + '.vrp', fp + '.sol') for fp in files_path])
+        files.append(files_)
+    
+    return files
+        
 
-for folder in folders:
-    innter_folder_path = os.path.join(folder, folder[-1])
-    files_path = sorted(list({os.path.join(innter_folder_path, s[:-4]) for s in os.listdir(innter_folder_path)}))
-    files_ = ( folder, [(fp + '.vrp', fp + '.sol') for fp in files_path])
-    files.append(files_)
-
-
-def search_hyper_paramenters(program_name, save_path = './', programs_number = 1, number_iterations=1, time=300, verbose=0, figure=0):
+def search_hyper_paramenters(program_name, files, save_path = './', programs_number = 1, number_iterations=1, time=300, verbose=0, figure=0):
     
     q_maxes = [0.15, 0.20, 0.30]
     r_values = [0.1, 0.3, 0.5]
-    #init_temps = [100, 1000, 10000]
-
+    
     T = ['A-n32-k5', 'A-n46-k7', 'A-n80-k10', 'B-n50-k8', 'B-n78-k10']
     targets = []
     for _, paths in files:
@@ -72,7 +74,7 @@ def search_hyper_paramenters(program_name, save_path = './', programs_number = 1
     processes = [] ## reseta lista de processos
                     
 
-def generate_results(program_name, save_path = './', programs_number = 1, number_iterations=1, q_max = 0.15, r=0.3, time=300, verbose=0, figure=0):
+def generate_results(program_name, files, save_path = './', programs_number = 1, number_iterations=1, q_max = 0.15, r=0.3, time=300, verbose=0, figure=0):
     
     total_targets = []  
     for _, paths in files:
@@ -134,13 +136,9 @@ def generate_results(program_name, save_path = './', programs_number = 1, number
 
 if __name__ == '__main__':
     
+    files = get_files('../../cvrp_instances/')
     
-    generate_results('app.py', 'resultados_finais_round', 
-                     programs_number=4, number_iterations=5,
-                     q_max=0.15, r=0.3, time=300,
+    generate_results('../app.py', files, save_path='teste/', 
+                     programs_number=4, number_iterations=1,
+                     q_max=0.15, r=0.3, time=10,
                      verbose=0, figure=0)
-    
-    """
-    search_hyper_paramenters('app.py', 'resultados_hp_com_round', programs_number=4, 
-                             number_iterations=1, time=300, verbose=0, figure=0)
-    """
