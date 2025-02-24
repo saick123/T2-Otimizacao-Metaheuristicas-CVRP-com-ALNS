@@ -10,4 +10,4 @@ Esse trabalho é referente a disciplica de Tópicos em Otimização: Meta-heurí
 - Para as flags ``verbose`` e ``figure``, 1 significa True e 0 False.
 - Na flag ``targets``, deve ser passado uma `string` com o `path` de todos os arquivos ``.vrp`` alvo separados por ``,`` (vírgula).
 - Por fim, um exemplo de linha de comando para o programa pode ser encontrado no arquivo ``command_line_example.txt``
-- O artigo do trabalho para mais detalhes pode ser encontrado também no repositório na pasta ``pdf`` com o nome de ``article.pdf``
+- Para mais detalhes, o artigo do trabalho pode ser encontrado também no repositório na pasta ``pdf`` com o nome de ``article.pdf``
