@@ -1,9 +1,0 @@
-instance; q_max; r; f_sol_optimal; f_mh_min; f_mh_mean; temp_min; temp_mean; gap_min; gap_mean
-A-n38-k5, 0.15, 0.3, 730, 730, 730.0, 3.0751943588256836, 3.0751943588256836, 0.0, 0.0
-
-Best Solution:
-route 1 ==> [21, 10, 30, 23, 35, 33, 8]
-route 2 ==> [32, 22, 27, 11, 5, 7]
-route 3 ==> [26, 12, 3, 1, 4, 16, 25, 6, 29]
-route 4 ==> [24, 14, 2, 15, 13, 36, 17, 9]
-route 5 ==> [18, 19, 34, 28, 31, 37, 20]

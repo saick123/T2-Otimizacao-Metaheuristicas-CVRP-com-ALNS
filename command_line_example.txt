@@ -1,0 +1,1 @@
+python3 app.py q_max=0.15 r=0.3 save_path='./' targets='../instancias/Vrp-Set-A/A/A-n32-k5.vrp' number_iterations=1 time=10 verbose=1 figure=1

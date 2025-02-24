@@ -1,9 +1,0 @@
-OK
-Vrp-Set-A/A/A-n32-k5.vrp,Vrp-Set-A/A/A-n33-k5.vrp,Vrp-Set-A/A/A-n33-k6.vrp,Vrp-Set-A/A/A-n34-k5.vrp,Vrp-Set-A/A/A-n36-k5.vrp,Vrp-Set-A/A/A-n37-k5.vrp,Vrp-Set-A/A/A-n37-k6.vrp,Vrp-Set-A/A/A-n38-k5.vrp,Vrp-Set-A/A/A-n39-k5.vrp,Vrp-Set-A/A/A-n39-k6.vrp,Vrp-Set-A/A/A-n44-k6.vrp,Vrp-Set-A/A/A-n45-k6.vrp,Vrp-Set-A/A/A-n45-k7.vrp
-
-Vrp-Set-A/A/A-n46-k7.vrp,Vrp-Set-A/A/A-n48-k7.vrp,Vrp-Set-A/A/A-n53-k7.vrp,Vrp-Set-A/A/A-n54-k7.vrp,Vrp-Set-A/A/A-n55-k9.vrp,Vrp-Set-A/A/A-n60-k9.vrp,Vrp-Set-A/A/A-n61-k9.vrp,Vrp-Set-A/A/A-n62-k8.vrp,Vrp-Set-A/A/A-n63-k10.vrp,Vrp-Set-A/A/A-n63-k9.vrp,Vrp-Set-A/A/A-n64-k9.vrp,Vrp-Set-A/A/A-n65-k9.vrp,Vrp-Set-A/A/A-n69-k9.vrp
-
-Vrp-Set-A/A/A-n80-k10.vrp,Vrp-Set-B/B/B-n31-k5.vrp,Vrp-Set-B/B/B-n34-k5.vrp,Vrp-Set-B/B/B-n35-k5.vrp,Vrp-Set-B/B/B-n38-k6.vrp,Vrp-Set-B/B/B-n39-k5.vrp,Vrp-Set-B/B/B-n41-k6.vrp,Vrp-Set-B/B/B-n43-k6.vrp,Vrp-Set-B/B/B-n44-k7.vrp,Vrp-Set-B/B/B-n45-k5.vrp,Vrp-Set-B/B/B-n45-k6.vrp,Vrp-Set-B/B/B-n50-k7.vrp,Vrp-Set-B/B/B-n50-k8.vrp
-
-Vrp-Set-B/B/B-n51-k7.vrp,Vrp-Set-B/B/B-n52-k7.vrp,Vrp-Set-B/B/B-n56-k7.vrp,Vrp-Set-B/B/B-n57-k7.vrp,Vrp-Set-B/B/B-n57-k9.vrp,Vrp-Set-B/B/B-n63-k10.vrp,Vrp-Set-B/B/B-n64-k9.vrp,Vrp-Set-B/B/B-n66-k9.vrp,Vrp-Set-B/B/B-n67-k10.vrp,Vrp-Set-B/B/B-n68-k9.vrp,Vrp-Set-B/B/B-n78-k10.vrp,Vrp-Set-F/F/F-n135-k7.vrp,Vrp-Set-F/F/F-n45-k4.vrp,Vrp-Set-F/F/F-n72-k4.vrp
-
